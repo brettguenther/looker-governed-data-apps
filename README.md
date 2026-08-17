@@ -58,8 +58,8 @@ If your instance does not have the `basic_ecomm` sample model (e.g. standard Loo
    * Edit `src/apps/<app-name>/queries.ts` to replace `model: 'basic_ecomm'` and `view: 'basic_order_items'` with your own LookML model and explore (e.g. `finance.transactions`, `marketing.campaign_performance`, `sales.opportunities`).
    * Update the field dimension and measure references in `queries.ts` and `BasicEcommApp.tsx`.
 
-2. **Deploy the Standard `thelook_ecommerce` LookML Model**:
-   * You can add the standard `thelook_ecommerce` LookML repository to your Looker instance connected to Google's public BigQuery dataset (`bigquery-public-data.thelook_ecommerce`).
+2. **Deploy the Open-Source `sample_thelook_ecommerce` LookML Model**:
+   * For standard or customer-hosted Looker instances, you can clone the open-source repository [drstrangelooker/sample_thelook_ecommerce](https://github.com/drstrangelooker/sample_thelook_ecommerce) into your Looker instance connected to Google's public BigQuery dataset (`bigquery-public-data.thelook_ecommerce`). This provides the exact same `basic_ecomm` model and `basic_order_items` explore used by this demo app.
 
 3. **AI-Generated Custom Applications for Your Data Domain**:
    * Have your AI pair programmer explore your instance's semantic layer via Looker MCP and scaffold a brand new customized data application in seconds (see below).
