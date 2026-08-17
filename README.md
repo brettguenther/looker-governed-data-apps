@@ -42,6 +42,30 @@ Traditional LLM data workflows (like Claude Artifacts or one-off code generation
 
 ---
 
+## 📊 Semantic Model Requirements & Deployments
+
+### Default Sample App: `basic_ecomm`
+The default out-of-the-box demo app is configured to query the **`basic_ecomm`** model and **`basic_order_items`** explore.
+
+* **Looker (Google Cloud core)**: This model is provisioned out-of-the-box in the default [Looker Core sample project](https://docs.cloud.google.com/looker/docs/looker-core-sample-project) (`sample_thelook_ecommerce`). If you are running on a Looker (Google Cloud core) instance, no additional LookML setup is required.
+
+### Alternatives for Non-Looker Core Deployments:
+
+If your instance does not have the `basic_ecomm` sample model (e.g. standard Looker SaaS or customer-hosted instances), you can use any of the following approaches:
+
+1. **Adapt to Any Custom LookML Model**:
+   * The architecture is completely decoupled from the data model.
+   * Edit `src/apps/<app-name>/queries.ts` to replace `model: 'basic_ecomm'` and `view: 'basic_order_items'` with your own LookML model and explore (e.g. `finance.transactions`, `marketing.campaign_performance`, `sales.opportunities`).
+   * Update the field dimension and measure references in `queries.ts` and `BasicEcommApp.tsx`.
+
+2. **Deploy the Standard `thelook_ecommerce` LookML Model**:
+   * You can add the standard `thelook_ecommerce` LookML repository to your Looker instance connected to Google's public BigQuery dataset (`bigquery-public-data.thelook_ecommerce`).
+
+3. **AI-Generated Custom Applications for Your Data Domain**:
+   * Have your AI pair programmer explore your instance's semantic layer via Looker MCP and scaffold a brand new customized data application in seconds (see below).
+
+---
+
 ## 🛠️ Tech Stack
 
 * **Framework**: React 18, TypeScript, Vite
