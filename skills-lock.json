@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "cors-api": {
+      "source": "lkrdev/looker-embed-skills",
+      "sourceType": "github",
+      "skillPath": "skills/cors-api/SKILL.md",
+      "computedHash": "459a478145013f0333fdacfc27a789e5c1c0ee137e5902cb8b0105dfde79ecbf"
+    }
+  }
+}
