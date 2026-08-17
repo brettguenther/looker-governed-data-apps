@@ -9,8 +9,8 @@ export interface LookerConfig {
 }
 
 export const getLookerConfig = (): LookerConfig => {
-  const baseUrl = import.meta.env.VITE_LOOKER_BASE_URL || 'https://looker.bguenther.demo.altostrat.com';
-  const clientId = import.meta.env.VITE_LOOKER_CLIENT_ID || 'looker-gen-apps';
+  const baseUrl = import.meta.env.VITE_LOOKER_BASE_URL || 'https://your-company.looker.com';
+  const clientId = import.meta.env.VITE_LOOKER_CLIENT_ID || 'looker-oauth-app';
   const redirectUri = import.meta.env.VITE_LOOKER_REDIRECT_URI || `${window.location.origin}/callback`;
 
   return {

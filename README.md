@@ -57,7 +57,7 @@ Traditional LLM data workflows (like Claude Artifacts or one-off code generation
 ### 1. Configure OAuth in Looker
 
 Ensure an OAuth client app is registered in your Looker instance (Admin > Platform > API Explorer or Admin UI):
-* **Client ID (`client_guid`)**: `looker-gen-apps`
+* **Client ID (`client_guid`)**: `looker-oauth-app`
 * **Redirect URI**: `https://localhost:3000/callback`
 * **Embedded Domain Allowlist** (Admin > Embed): Ensure `https://localhost:3000` is present.
 
@@ -65,8 +65,8 @@ Ensure an OAuth client app is registered in your Looker instance (Admin > Platfo
 
 Check `.env` (copy from `.env.example`):
 ```bash
-VITE_LOOKER_BASE_URL=https://looker.bguenther.demo.altostrat.com
-VITE_LOOKER_CLIENT_ID=looker-gen-apps
+VITE_LOOKER_BASE_URL=https://your-company.looker.com
+VITE_LOOKER_CLIENT_ID=looker-oauth-app
 VITE_LOOKER_REDIRECT_URI=https://localhost:3000/callback
 ```
 
