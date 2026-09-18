@@ -48,7 +48,18 @@ export const OAuthCallback: React.FC<OAuthCallbackProps> = ({ onComplete }) => {
         }, 500);
       } catch (err: unknown) {
         setStatus('error');
-        const message = err instanceof Error ? err.message : 'Failed to redeem authorization code with Looker.';
+        let message = 'Failed to redeem authorization code with Looker.';
+        if (err instanceof Error) {
+          message = err.message;
+        } else if (typeof err === 'object' && err !== null) {
+          try {
+            message = JSON.stringify(err, null, 2);
+          } catch {
+            message = String(err);
+          }
+        } else if (typeof err === 'string') {
+          message = err;
+        }
         setErrorMessage(message);
       }
     };

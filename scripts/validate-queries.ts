@@ -17,6 +17,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,7 +44,7 @@ const parseArgs = () => {
 
 // Load env files if credentials are missing
 const loadLocalEnvSecrets = () => {
-  const homeDir = process.env.HOME || '/usr/local/google/home/bguenther';
+  const homeDir = process.env.HOME || os.homedir();
   const envCandidates = [
     path.join(rootDir, '.env'),
     path.join(homeDir, '.env_looker'),
@@ -72,7 +73,7 @@ const loadLocalEnvSecrets = () => {
 loadLocalEnvSecrets();
 
 const getBaseUrl = (): string => {
-  let url = process.env.LOOKER_BASE_URL || process.env.LOOKERSDK_BASE_URL || process.env.VITE_LOOKER_BASE_URL || 'https://looker.bguenther.demo.altostrat.com';
+  let url = process.env.LOOKER_BASE_URL || process.env.LOOKERSDK_BASE_URL || process.env.VITE_LOOKER_BASE_URL || 'https://your-company.looker.com';
   // Strip trailing slash
   return url.replace(/\/+$/, '');
 };

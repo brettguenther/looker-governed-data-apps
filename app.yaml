@@ -1,0 +1,28 @@
+# Google App Engine Configuration
+# Target Service: looker-ai-data-apps (Preserves 'default' and 'oauth-embed' services)
+service: looker-ai-data-apps
+
+runtime: nodejs22
+instance_class: F1
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 2
+
+handlers:
+  # Static hashed assets from Vite build
+  - url: /assets
+    static_dir: dist/assets
+    secure: always
+
+  # Static root assets (icons, manifests, etc.)
+  - url: /(.*\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|map))$
+    static_files: dist/\1
+    upload: dist/.*\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|map)$
+    secure: always
+
+  # SPA Routing Fallback: Route all navigation paths (/callback, /?app=...) to index.html
+  - url: /.*
+    static_files: dist/index.html
+    upload: dist/index.html
+    secure: always

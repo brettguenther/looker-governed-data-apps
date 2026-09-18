@@ -10,11 +10,13 @@
     "validate:queries": "tsx scripts/validate-queries.ts",
     "validate:app": "tsx scripts/validate-app.ts",
     "scaffold:app": "tsx scripts/scaffold-app.ts",
-    "validate": "tsx scripts/validate-app.ts all && tsx scripts/validate-queries.ts all"
+    "validate": "tsx scripts/validate-app.ts all && tsx scripts/validate-queries.ts all",
+    "deploy:gae": "npm run build && gcloud app deploy app.yaml --quiet"
   },
   "dependencies": {
     "@looker/sdk": "^26.12.0",
     "@looker/sdk-rtl": "^21.6.5",
+    "buffer": "^6.0.3",
     "clsx": "^2.1.1",
     "lucide-react": "^0.475.0",
     "react": "^18.3.1",
