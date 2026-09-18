@@ -1,9 +1,7 @@
-import { SalesOverviewApp } from './sales-overview/SalesOverviewApp';
-import { UserCohortsApp } from './user-cohorts/UserCohortsApp';
 import React from 'react';
 import type { GovernedAppProps } from '../types/looker';
 import { BasicEcommApp } from './basic-ecomm/BasicEcommApp';
-import { SalesAnalyticsApp } from './sales-analytics/SalesAnalyticsApp';
+import { SalesOverviewApp } from './sales-overview/SalesOverviewApp';
 
 export interface GovernedAppDefinition {
   id: string;
@@ -17,29 +15,6 @@ export interface GovernedAppDefinition {
 }
 
 export const APP_REGISTRY: Record<string, GovernedAppDefinition> = {
-  'sales-overview': {
-    id: 'sales-overview',
-    name: 'Sales Overview',
-    description: 'Executive revenue, monthly trends, category performance, and geographic sales',
-    model: 'look_ecomm',
-    view: 'order_items',
-    category: 'Sales',
-    icon: 'TrendingUp',
-    component: SalesOverviewApp,
-  },
-
-  'user-cohorts': {
-    id: 'user-cohorts',
-    name: 'User Cohorts',
-    description: 'AI-generated application for basic_ecomm :: basic_users',
-    model: 'basic_ecomm',
-    view: 'basic_users',
-    category: 'Audience',
-    icon: 'Layers',
-    component: UserCohortsApp,
-  },
-
-
   'basic-ecomm': {
     id: 'basic-ecomm',
     name: 'E-Commerce Overview',
@@ -50,15 +25,15 @@ export const APP_REGISTRY: Record<string, GovernedAppDefinition> = {
     icon: 'ShoppingCart',
     component: BasicEcommApp,
   },
-  'sales-analytics': {
-    id: 'sales-analytics',
-    name: 'Sales Performance',
-    description: 'Channel revenue, product categories, and quota tracking',
-    model: 'edg_orders',
-    view: 'fct_orders',
+  'sales-overview': {
+    id: 'sales-overview',
+    name: 'Sales Overview',
+    description: 'Executive revenue, monthly trends, category performance, and geographic sales',
+    model: 'look_ecomm',
+    view: 'order_items',
     category: 'Sales',
     icon: 'TrendingUp',
-    component: SalesAnalyticsApp,
+    component: SalesOverviewApp,
   },
 };
 

@@ -51,7 +51,7 @@ async function main() {
     console.error(
       'Usage: npx tsx scripts/scaffold-app.ts --id <app-id> --name "<App Name>" --model <model> --view <view> [--category <category>]'
     );
-    console.error('Example: npx tsx scripts/scaffold-app.ts --id user-cohorts --name "User Cohorts" --model basic_ecomm --view basic_users');
+    console.error('Example: npx tsx scripts/scaffold-app.ts --id marketing-analytics --name "Marketing Analytics" --model basic_ecomm --view basic_order_items');
     process.exit(1);
   }
 

@@ -52,11 +52,9 @@ The host platform functions as a lightweight runtime shell with zero in-app stud
 - **URL Parameter Routing**: Direct deep-linking to specific applications via `/?app=<app-id>`.
 - **Semantic Inspector**: An expandable diagnostics drawer displaying the live Looker query definitions, generated SQL, execution latency, and CORS response payloads.
 
-### Included Out-of-the-Box Applications
+### Included Out-of-the-Box Application
 
 - **`basic-ecomm`** (E-Commerce Analytics): Revenue trends, order status breakdown, category performance, and item-level data grid using `basic_ecomm :: basic_order_items`.
-- **`sales-analytics`** (Sales Performance): Gross merchandise value, regional performance, and top brand leaderboards using `edg_orders :: fct_orders`.
-- **`user-cohorts`** (Audience Demographics): User growth, geographical distribution, age demographics, and traffic acquisition sources using `basic_ecomm :: basic_users`.
 
 ---
 
@@ -149,9 +147,7 @@ src/
 │   │   └── LoginPrompt.tsx    # OAuth login screen
 ├── apps/
 │   ├── registry.ts            # Central registry of all governed data applications
-│   ├── basic-ecomm/           # E-Commerce Analytics (basic_ecomm :: basic_order_items)
-│   ├── sales-analytics/       # Sales Performance (edg_orders :: fct_orders)
-│   └── user-cohorts/          # Audience & Demographics (basic_ecomm :: basic_users)
+│   └── basic-ecomm/           # E-Commerce Analytics (basic_ecomm :: basic_order_items)
 ├── App.tsx                    # Dynamic app router (/?app=<id>) & shell layout
 └── main.tsx                   # React DOM entrypoint with Buffer polyfill
 scripts/
@@ -203,6 +199,48 @@ Once validated, the application is immediately accessible from the Header App Sw
 ```
 https://localhost:3000/?app=<app-id>
 ```
+
+---
+
+## Self-Serve Operating & Deployment Model
+
+This architecture implements a decentralized creator model backed by centralized governance:
+
+```mermaid
+flowchart TD
+    subgraph Creator["1. Business End Users (Local Authoring via Claude)"]
+        U["End User prompts Claude Code"] -->|"1. Natural Language Prompt"| C["Claude Code in Local Workspace"]
+        C -->|"2. Scaffold & Introspect"| V["Local Validation Harness"]
+        V -->|"3. Dry-run queries against Looker API"| C
+        C -->|"4. Open Git Pull Request"| PR["Feature Branch & PR"]
+    end
+
+    subgraph Platform["2. Central Data Team (Governance & Platform Hosting)"]
+        PR -->|"5. Automated CI Validation"| CI["GitHub Actions / Cloud Build"]
+        CI -->|"6. Merge & Auto-Deploy"| GAE["Google App Engine (looker-ai-data-apps)"]
+        GAE -->|"7. Production Host Shell"| Portal["Central Analytics Portal"]
+    end
+```
+
+### Separation of Responsibilities
+
+- **Central Data Team (Platform Owners)**:
+  - Owns and manages the LookML semantic layer, row-level security (RLS), and Looker instance configuration.
+  - Owns and operates the deployed Host Shell infrastructure on Google App Engine.
+  - Configures automated CI/CD pipelines to validate incoming Pull Requests and deploy merged applications.
+  - Avoids becoming a bottleneck for one-off reporting dashboard requests.
+
+- **Business End Users (Application Creators)**:
+  - Use Claude Code in a local workspace to self-serve new analytics applications on demand.
+  - Claude runs scaffolding (`npm run scaffold:app`) and verification (`npm run validate`) locally in the background.
+  - Once validated, Claude commits to a feature branch and opens a Pull Request (`gh pr create`).
+  - Users require zero Google Cloud IAM permissions and never execute deployment commands directly.
+
+### Enterprise Delivery Pipeline
+
+1. **Local Authoring & Validation**: The business user clones the repository (or an internal starter template) and prompts Claude Code. Claude drafts declarative queries and UI components, verifying every field and query against Looker's live API using the validation harness.
+2. **Automated CI Validation**: When Claude opens a Pull Request, the central CI workflow automatically runs `npm run validate` against Looker. Pull Requests containing hallucinated dimensions, broken measures, or invalid TypeScript types are blocked automatically.
+3. **Continuous Deployment**: When the Central Data Team approves or auto-merges the Pull Request to `main`, the CI pipeline executes `npm run deploy:gae` to update the production App Engine service without downtime.
 
 ---
 
