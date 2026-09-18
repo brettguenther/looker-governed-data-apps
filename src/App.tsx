@@ -1,26 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LookerAuthProvider, useLookerAuth } from './looker/auth/LookerAuthProvider';
 import { OAuthCallback } from './looker/auth/OAuthCallback';
 import { Header } from './components/layout/Header';
 import { LoginPrompt } from './components/common/LoginPrompt';
-import { BasicEcommApp } from './apps/basic-ecomm/BasicEcommApp';
 import { SemanticInspector } from './components/common/SemanticInspector';
 import { AppGeneratorModal } from './apps/app-generator/AppGeneratorModal';
-import type { LookerQueryPayload } from './types/looker';
-import { Loader2 } from 'lucide-react';
+import { getRegisteredApp, getDefaultApp } from './apps/registry';
+import type { RegisteredQuery } from './types/looker';
+import { Loader2, AlertCircle } from 'lucide-react';
 
-interface RegisteredQuery {
-  name: string;
-  payload: LookerQueryPayload;
-  executionTimeMs?: number | null;
-  status: 'success' | 'loading' | 'error';
-}
+const getAppIdFromUrl = (): string => {
+  const params = new URLSearchParams(window.location.search);
+  const appParam = params.get('app');
+  if (appParam && getRegisteredApp(appParam)) {
+    return appParam;
+  }
+  return getDefaultApp().id;
+};
 
 const MainAppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useLookerAuth();
+  const [activeAppId, setActiveAppId] = useState<string>(getAppIdFromUrl);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [registeredQueries, setRegisteredQueries] = useState<RegisteredQuery[]>([]);
+
+  // Sync with browser navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      setActiveAppId(getAppIdFromUrl());
+      setRegisteredQueries([]);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleSelectApp = useCallback((appId: string) => {
+    setActiveAppId(appId);
+    setRegisteredQueries([]);
+    const url = new URL(window.location.href);
+    url.searchParams.set('app', appId);
+    window.history.pushState({}, '', url.toString());
+  }, []);
+
+  const activeAppDef = getRegisteredApp(activeAppId) || getDefaultApp();
+  const ActiveComponent = activeAppDef?.component;
 
   if (isLoading) {
     return (
@@ -34,13 +58,25 @@ const MainAppContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       <Header
+        activeAppId={activeAppId}
+        onSelectApp={handleSelectApp}
         onOpenInspector={() => setIsInspectorOpen(true)}
         onOpenGenerator={() => setIsGeneratorOpen(true)}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isAuthenticated ? (
-          <BasicEcommApp onRegisterQueries={setRegisteredQueries} />
+          ActiveComponent ? (
+            <ActiveComponent onRegisterQueries={setRegisteredQueries} />
+          ) : (
+            <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-3">
+              <AlertCircle className="w-8 h-8 text-amber-400 mx-auto" />
+              <h3 className="text-base font-semibold text-white">App Not Found</h3>
+              <p className="text-xs text-slate-400">
+                The requested app <code className="text-purple-300 font-mono">{activeAppId}</code> is not registered in the host shell.
+              </p>
+            </div>
+          )
         ) : (
           <LoginPrompt />
         )}

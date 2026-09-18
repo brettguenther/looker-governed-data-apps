@@ -14,7 +14,7 @@ export function useFieldSuggestions(model: string, view: string, fieldName: stri
     const fetchSuggestions = async () => {
       setLoading(true);
       try {
-        const fullField = `${view}.${fieldName}`;
+        const fullField = fieldName.includes('.') ? fieldName : `${view}.${fieldName}`;
         const queryBody: IWriteQuery = {
           model,
           view,

@@ -44,3 +44,15 @@ export interface ChartSeriesConfig {
   name?: string;
   color?: string;
 }
+
+export interface RegisteredQuery {
+  name: string;
+  payload: LookerQueryPayload;
+  executionTimeMs?: number | null;
+  status: 'success' | 'loading' | 'error';
+}
+
+export interface GovernedAppProps {
+  onRegisterQueries?: (queries: RegisteredQuery[]) => void;
+}
+

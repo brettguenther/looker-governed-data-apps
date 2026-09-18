@@ -122,7 +122,7 @@ src/
 │       ├── useLookerQuery.ts  # Reactive hook for sdk.run_inline_query
 │       └── useFieldSuggestions.ts # Dynamic field value suggestions
 ├── components/
-│   ├── layout/Header.tsx      # Navbar, auth badge, Query Inspector toggle
+│   ├── layout/Header.tsx      # Navbar, App Switcher dropdown, auth badge, Inspector toggle
 │   ├── common/
 │   │   ├── MetricCard.tsx     # Single value KPI scorecard with formatting
 │   │   ├── DataChart.tsx      # Recharts wrapper for Area, Bar, Donut, Line
@@ -131,25 +131,48 @@ src/
 │   │   ├── SemanticInspector.tsx # Real-time Looker query & CORS inspector
 │   │   └── LoginPrompt.tsx    # OAuth login screen
 ├── apps/
-│   ├── basic-ecomm/           # AI-Generated E-Commerce App (basic_ecomm)
-│   │   ├── queries.ts         # Declarative Looker query definitions
-│   │   └── BasicEcommApp.tsx  # Interactive dashboard component
-│   └── app-generator/         # AI Generation Recipe & prompt modal
-├── App.tsx                    # Root routing & layout
+│   ├── registry.ts            # Central registry of all governed data applications
+│   ├── basic-ecomm/           # E-Commerce Analytics (basic_ecomm :: basic_order_items)
+│   ├── sales-analytics/       # Sales Performance (edg_orders :: fct_orders)
+│   └── user-cohorts/          # Audience & Demographics (basic_ecomm :: basic_users)
+├── App.tsx                    # Dynamic app router (/?app=<id>) & shell layout
 └── main.tsx                   # React DOM entrypoint
+scripts/
+├── validate-queries.ts        # Dry-runs queries against Looker API (POST /api/4.0/queries/run/sql)
+├── validate-app.ts            # Verifies app contracts and executes tsc --noEmit
+└── scaffold-app.ts            # Scaffolds boilerplate and auto-registers new apps
 ```
 
 ---
 
 ## 🤖 How AI Agents Generate New Applications
 
-To have an AI assistant generate a new data application:
+Claude and other AI assistants use `.agents/skills/generate-governed-app/SKILL.md` to autonomously generate, test, and register new governed data applications:
 
-```prompt
-I want to create a new Looker AI Data App for the "<model_name>" model.
-Please:
-1. Use Looker MCP to explore the models, explores, and dimensions/measures.
-2. Formulate declarative Looker query definitions in a queries.ts file.
-3. Build an interactive React component using the useLookerQuery hook with dynamic filters, KPIs, charts, and table.
-4. Integrate the new app into the LookerAuthProvider harness.
+### 1. Scaffold the New App
+```bash
+npm run scaffold:app -- --id <app-id> --name "<App Name>" --model <model> --view <explore> --category "<Category>"
 ```
+This creates `src/apps/<app-id>/queries.ts`, `src/apps/<app-id>/<PascalCase>App.tsx`, and auto-registers the app in `src/apps/registry.ts`.
+
+### 2. Formulate LookML Queries & UI Layout
+The agent explores the semantic model via Looker MCP and fills in the dimensions, measures, filters, KPI cards, charts, and tables.
+
+### 3. Run the Client Validation Harness (MANDATORY)
+```bash
+# Dry-run queries against Looker's live API to verify field validity:
+npm run validate:queries <app-id>
+
+# Verify contract adherence and TypeScript types:
+npm run validate:app <app-id>
+
+# Run both validators across all apps:
+npm run validate
+```
+
+### 4. Open in the Host Shell
+Once validated, the app is immediately available in the Header App Switcher or via direct URL:
+```
+https://localhost:3000/?app=<app-id>
+```
+
