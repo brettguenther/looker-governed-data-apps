@@ -70,6 +70,7 @@ The default applications query the `basic_ecomm` model and `basic_order_items` e
 ### Adapting to Custom Models
 
 The platform is completely decoupled from any specific schema:
+
 1. Update `model` and `view` in `src/apps/<app-name>/queries.ts` to match your LookML explore (e.g. `finance.transactions`).
 2. Update the field dimension and measure references in `queries.ts` and the corresponding React app component.
 3. Run the validation harness (`npm run validate:<app-name>`).
@@ -89,17 +90,59 @@ The platform is completely decoupled from any specific schema:
 
 ## Quickstart
 
-### 1. Configure OAuth & CORS in Looker
+### 1. Register OAuth Clients in Looker (One-Time Admin Setup)
 
-Ensure an OAuth client application and CORS domain are configured in your Looker instance:
+OAuth client applications are registered on the Looker instance by an administrator. This is a **one-time task owned by Looker Admins**, performed once per Looker instance. Application creators never perform these steps and never handle client secrets.
 
-1. **OAuth Client Application** (Admin > Platform > API Explorer or Admin UI):
-   - **Client ID (`client_guid`)**: `looker-oauth-app`
-   - **Redirect URI**: `https://localhost:3000/callback`
-   - **Enabled**: True
+| Client                | Purpose                                        | Required?               |
+| :-------------------- | :--------------------------------------------- | :---------------------- |
+| Host Shell client (a) | Authenticates end users in the browser runtime | Always                  |
+| CLI client (b)        | Authenticates the local validation harness     | Only without Looker MCP |
+| Embed allowlist (c)   | Permits the Host Shell origin to embed Looker  | Always                  |
 
-2. **Embedded Domain Allowlist** (Admin > Embed):
-   - Add `https://localhost:3000` to the allowlist.
+Register each client via the API Explorer
+(`https://<your-instance>/extensions/marketplace_extension_api_explorer::api-explorer/4.0/methods/Auth/register_oauth_client_app`)
+or by calling [`register_oauth_client_app`](https://cloud.google.com/looker/docs/reference/looker-api/latest/methods/Auth/register_oauth_client_app) directly.
+
+#### a. Host Shell client (browser runtime) — required
+
+Authenticates end users viewing deployed applications. Register one entry per origin you serve from (local development plus each deployed environment).
+
+| Field          | Value                                                                            |
+| :------------- | :------------------------------------------------------------------------------- |
+| `client_guid`  | `looker-ai-data-apps`                                                            |
+| `redirect_uri` | `https://localhost:3000/callback` (add a second client for your deployed origin) |
+| `display_name` | Looker AI Data Apps                                                              |
+| `enabled`      | `true`                                                                           |
+
+#### b. CLI client (local validation tooling) — optional
+
+> [!TIP]
+> Skip this client if your creators author apps through an agent with a **Looker MCP** connection. The agent validates queries over its existing MCP session, so no local Looker credentials and no second OAuth client are involved. Register this client only if you need the standalone CLI path below.
+
+Register it when either of these applies:
+
+- Creators run `npm run validate:queries` outside an MCP-enabled agent.
+- You want an interactive browser sign-in for the harness instead of issuing API keys.
+
+CI pipelines do not need this client either; they authenticate with a service account (`LOOKER_CLIENT_ID` / `LOOKER_CLIENT_SECRET`) or an injected `LOOKER_ACCESS_TOKEN`.
+
+```json
+{
+  "client_guid": "looker-ai-data-apps-cli",
+  "redirect_uri": "http://localhost:8000/callback",
+  "display_name": "Looker AI Data Apps CLI",
+  "description": "Local semantic query validation for governed data apps",
+  "enabled": true
+}
+```
+
+> [!IMPORTANT]
+> Looker enforces an **exact match** on `redirect_uri`, so the CLI loopback port cannot be randomized. Port `8000` is the default. If your users commonly have that port occupied, register additional clients on alternate ports (for example `8010`, `8020`) and have those users set `LOOKER_OAUTH_PORT` accordingly.
+
+#### c. Embedded Domain Allowlist — required
+
+Under **Admin > Embed**, add each Host Shell origin (for example `https://localhost:3000` and your deployed URL) to the allowlist.
 
 ### 2. Configure Environment
 
@@ -107,8 +150,13 @@ Copy `.env.example` to `.env`:
 
 ```bash
 VITE_LOOKER_BASE_URL=https://<your-instance>.cloud.looker.com
-VITE_LOOKER_CLIENT_ID=looker-oauth-app
+VITE_LOOKER_CLIENT_ID=looker-ai-data-apps
 VITE_LOOKER_REDIRECT_URI=https://localhost:3000/callback
+
+# Optional: only needed for the standalone CLI validation harness.
+# Agents validating through Looker MCP do not need these.
+LOOKER_BASE_URL=https://<your-instance>.cloud.looker.com
+LOOKER_OAUTH_CLIENT_ID=looker-ai-data-apps-cli
 ```
 
 ### 3. Run Development Server
@@ -151,6 +199,14 @@ src/
 ├── App.tsx                    # Dynamic app router (/?app=<id>) & shell layout
 └── main.tsx                   # React DOM entrypoint with Buffer polyfill
 scripts/
+├── auth/                      # Looker OAuth 2.0 PKCE for local CLI tooling
+│   ├── cli.ts                 # auth:login / auth:status / auth:logout commands
+│   ├── config.ts              # Node-side config and shared dotenv loader
+│   ├── crypto.ts              # Node Web Crypto implementation of ICryptoHash
+│   ├── loopback.ts            # Loopback callback listener and browser launcher
+│   ├── resolve.ts             # Credential precedence chain
+│   ├── session.ts             # NodeOAuthSession extending the Looker SDK OAuthSession
+│   └── token-store.ts         # Refresh token persistence (0600, keyed per instance)
 ├── validate-queries.ts        # Dry-runs queries against Looker API (POST /api/4.0/queries/run/sql)
 ├── validate-app.ts            # Verifies app contracts and executes tsc --noEmit
 └── scaffold-app.ts            # Scaffolds boilerplate and auto-registers new apps
@@ -169,6 +225,7 @@ npm run scaffold:app -- --id <app-id> --name "<App Name>" --model <model> --view
 ```
 
 This creates:
+
 - `src/apps/<app-id>/queries.ts`
 - `src/apps/<app-id>/<PascalCase>App.tsx`
 - Registration entry in `src/apps/registry.ts`
@@ -191,6 +248,44 @@ npm run validate:app <app-id>
 # Run all validators across the entire application suite
 npm run validate
 ```
+
+#### Authenticating the Validation Harness
+
+`validate:app` is entirely local and needs no Looker credentials. Only `validate:queries` talks to Looker, and it resolves credentials in this order:
+
+| Priority | Source                                      | Typical user                 |
+| :------- | :------------------------------------------ | :--------------------------- |
+| 1        | `--token <access_token>`                    | Ad-hoc debugging             |
+| 2        | `LOOKER_ACCESS_TOKEN` env var               | CI pipelines                 |
+| 3        | Stored OAuth refresh token                  | Returning creator, silent    |
+| 4        | Interactive browser login                   | First-time creator, TTY only |
+| 5        | `LOOKER_CLIENT_ID` + `LOOKER_CLIENT_SECRET` | Service accounts             |
+
+> [!TIP]
+> When an agent is working through **Looker MCP**, it validates queries directly over its existing MCP session and none of the above is required. The CLI credential chain matters for users running the harness outside an MCP-enabled agent, and for CI.
+
+For a first-time creator, a single browser sign-in covers it:
+
+```bash
+npm run auth:login     # opens the browser, stores a refresh token
+npm run auth:status    # shows the authenticated user and instance
+npm run auth:logout    # revokes the session and deletes stored credentials
+```
+
+The refresh token is written to `~/.looker-ai-data-apps/credentials.json` with `0600` permissions and is keyed per instance, so switching between development and production Looker instances does not require re-authenticating each time. Subsequent validation runs refresh silently. No API keys or client secrets are ever issued to the creator.
+
+In non-interactive shells (CI, or `CI=true`) the harness never attempts to open a browser; it fails fast with instructions to supply a token.
+
+##### Signing In From a Remote Host
+
+Looker redirects to `http://localhost:8000/callback`, which resolves on the machine running the browser. If you run `auth:login` over SSH or on a cloud workstation, forward the port before starting the login so that the redirect reaches the listener:
+
+```bash
+ssh -L 8000:localhost:8000 <remote-host>
+npm run auth:login
+```
+
+`auth:login` always prints the authorization URL, so paste it into the browser on your local machine. Visiting `http://localhost:8000/` directly returns a "listener is running and waiting" message; that response confirms the tunnel is working, and it is not the sign-in page.
 
 ### 4. Load in Host Shell
 

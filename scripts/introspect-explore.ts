@@ -7,7 +7,7 @@
  *
  * Usage:
  *   npx tsx scripts/introspect-explore.ts --model <model> --view <view> [--json]
- *   npm run looker:explore -- --model nyc_citibike_trips --view trips
+ *   npm run looker:explore -- --model basic_ecomm --view basic_order_items
  */
 
 import fs from 'fs';
@@ -128,7 +128,7 @@ async function main() {
 
   if (!model || !view) {
     console.error('Usage: npx tsx scripts/introspect-explore.ts --model <model> --view <view> [--json]');
-    console.error('Example: npm run looker:explore -- --model nyc_citibike_trips --view trips');
+    console.error('Example: npm run looker:explore -- --model basic_ecomm --view basic_order_items');
     process.exit(1);
   }
 

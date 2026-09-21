@@ -11,6 +11,9 @@
     "validate:app": "tsx scripts/validate-app.ts",
     "scaffold:app": "tsx scripts/scaffold-app.ts",
     "looker:explore": "tsx scripts/introspect-explore.ts",
+    "auth:login": "tsx scripts/auth/cli.ts login",
+    "auth:status": "tsx scripts/auth/cli.ts status",
+    "auth:logout": "tsx scripts/auth/cli.ts logout",
     "validate": "tsx scripts/validate-app.ts all && tsx scripts/validate-queries.ts all",
     "deploy:gae": "npm run build && gcloud app deploy app.yaml --quiet"
   },
