@@ -1,8 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { MetricCard } from '../../components/common/MetricCard';
 import { DataChart } from '../../components/common/DataChart';
 import { DataTable } from '../../components/common/DataTable';
 import { useLookerQuery } from '../../looker/hooks/useLookerQuery';
+import { useGovernedQuerySync } from '../../looker/hooks/useGovernedQuery';
 import { useFieldSuggestions } from '../../looker/hooks/useFieldSuggestions';
 import {
   buildKpiMetricsQuery,
@@ -113,99 +114,19 @@ export const BasicEcommApp: React.FC<GovernedAppProps> = ({ onRegisterQueries })
   const statusResult = useLookerQuery(statusPayload);
   const tableResult = useLookerQuery(tablePayload);
 
-  // Expose active queries to Semantic Layer Inspector
-  useEffect(() => {
-    if (onRegisterQueries) {
-      onRegisterQueries([
-        {
-          name: 'Executive KPIs',
-          payload: kpiPayload,
-          executionTimeMs: kpiResult.executionTimeMs,
-          fromCache: kpiResult.fromCache,
-          status: kpiResult.loading ? 'loading' : kpiResult.error ? 'error' : 'success',
-        },
-        {
-          name: 'Monthly Revenue & Volume Trend',
-          payload: trendPayload,
-          executionTimeMs: trendResult.executionTimeMs,
-          fromCache: trendResult.fromCache,
-          status: trendResult.loading ? 'loading' : trendResult.error ? 'error' : 'success',
-        },
-        {
-          name: 'Top Brands by Revenue',
-          payload: brandsPayload,
-          executionTimeMs: brandsResult.executionTimeMs,
-          fromCache: brandsResult.fromCache,
-          status: brandsResult.loading ? 'loading' : brandsResult.error ? 'error' : 'success',
-        },
-        {
-          name: 'Revenue by Category',
-          payload: categoryPayload,
-          executionTimeMs: categoryResult.executionTimeMs,
-          fromCache: categoryResult.fromCache,
-          status: categoryResult.loading ? 'loading' : categoryResult.error ? 'error' : 'success',
-        },
-        {
-          name: 'Geographic Markets',
-          payload: countryPayload,
-          executionTimeMs: countryResult.executionTimeMs,
-          fromCache: countryResult.fromCache,
-          status: countryResult.loading ? 'loading' : countryResult.error ? 'error' : 'success',
-        },
-        {
-          name: 'Order Status Distribution',
-          payload: statusPayload,
-          executionTimeMs: statusResult.executionTimeMs,
-          fromCache: statusResult.fromCache,
-          status: statusResult.loading ? 'loading' : statusResult.error ? 'error' : 'success',
-        },
-        {
-          name: 'Product & Brand Performance Table',
-          payload: tablePayload,
-          executionTimeMs: tableResult.executionTimeMs,
-          fromCache: tableResult.fromCache,
-          status: tableResult.loading ? 'loading' : tableResult.error ? 'error' : 'success',
-        },
-      ]);
-    }
-  }, [
-    onRegisterQueries,
-    kpiPayload,
-    trendPayload,
-    brandsPayload,
-    categoryPayload,
-    countryPayload,
-    statusPayload,
-    tablePayload,
-    kpiResult.executionTimeMs,
-    kpiResult.fromCache,
-    kpiResult.loading,
-    kpiResult.error,
-    trendResult.executionTimeMs,
-    trendResult.fromCache,
-    trendResult.loading,
-    trendResult.error,
-    brandsResult.executionTimeMs,
-    brandsResult.fromCache,
-    brandsResult.loading,
-    brandsResult.error,
-    categoryResult.executionTimeMs,
-    categoryResult.fromCache,
-    categoryResult.loading,
-    categoryResult.error,
-    countryResult.executionTimeMs,
-    countryResult.fromCache,
-    countryResult.loading,
-    countryResult.error,
-    statusResult.executionTimeMs,
-    statusResult.fromCache,
-    statusResult.loading,
-    statusResult.error,
-    tableResult.executionTimeMs,
-    tableResult.fromCache,
-    tableResult.loading,
-    tableResult.error,
-  ]);
+  // Synchronize active queries to Semantic Layer Inspector
+  useGovernedQuerySync(
+    [
+      { name: 'Executive KPIs', query: kpiResult },
+      { name: 'Monthly Revenue & Volume Trend', query: trendResult },
+      { name: 'Top Brands by Revenue', query: brandsResult },
+      { name: 'Revenue by Category', query: categoryResult },
+      { name: 'Geographic Markets', query: countryResult },
+      { name: 'Order Status Distribution', query: statusResult },
+      { name: 'Product & Brand Performance Table', query: tableResult },
+    ],
+    onRegisterQueries
+  );
 
   const handleFilterChange = (key: keyof EcommFilterState, val: string) => {
     setFilters((prev) => ({ ...prev, [key]: val }));

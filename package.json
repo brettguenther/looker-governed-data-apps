@@ -10,6 +10,7 @@
     "validate:queries": "tsx scripts/validate-queries.ts",
     "validate:app": "tsx scripts/validate-app.ts",
     "scaffold:app": "tsx scripts/scaffold-app.ts",
+    "looker:explore": "tsx scripts/introspect-explore.ts",
     "validate": "tsx scripts/validate-app.ts all && tsx scripts/validate-queries.ts all",
     "deploy:gae": "npm run build && gcloud app deploy app.yaml --quiet"
   },
