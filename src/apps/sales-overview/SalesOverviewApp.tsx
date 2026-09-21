@@ -87,10 +87,20 @@ export const SalesOverviewApp: React.FC<GovernedAppProps> = ({ onRegisterQueries
     return filterObj;
   }, [filters]);
 
+  const [trendDimension, setTrendDimension] = useState<string>('order_items.created_month');
+  const [trendMeasure, setTrendMeasure] = useState<string>('order_items.total_sale_price');
+  const [categoryDimension, setCategoryDimension] = useState<string>('products.category');
+
   // Construct queries
   const kpiPayload = useMemo(() => buildKpiMetricsQuery(activeLookerFilters), [activeLookerFilters]);
-  const trendPayload = useMemo(() => buildMonthlyTrendQuery(activeLookerFilters), [activeLookerFilters]);
-  const categoryPayload = useMemo(() => buildCategoryRevenueQuery(activeLookerFilters), [activeLookerFilters]);
+  const trendPayload = useMemo(
+    () => buildMonthlyTrendQuery(activeLookerFilters, trendDimension),
+    [activeLookerFilters, trendDimension]
+  );
+  const categoryPayload = useMemo(
+    () => buildCategoryRevenueQuery(activeLookerFilters, categoryDimension),
+    [activeLookerFilters, categoryDimension]
+  );
   const brandsPayload = useMemo(() => buildTopBrandsQuery(activeLookerFilters), [activeLookerFilters]);
   const countryPayload = useMemo(() => buildCountrySalesQuery(activeLookerFilters), [activeLookerFilters]);
   const statusPayload = useMemo(() => buildOrderStatusQuery(activeLookerFilters), [activeLookerFilters]);
@@ -429,15 +439,52 @@ export const SalesOverviewApp: React.FC<GovernedAppProps> = ({ onRegisterQueries
 
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Revenue Trend (2 Cols) */}
+        {/* Dynamic Revenue & Margin Trend (2 Cols) */}
         <div className="lg:col-span-2">
           <DataChart
-            title="Monthly Sales Trend"
-            subtitle="Looker monthly time dimension aggregation"
-            type="area"
+            title="Sales & Margin Trend"
+            subtitle="Dynamically switch time granularity, metric, or dual-axis combo view"
+            type={trendMeasure === '__combo__' ? 'combo' : 'area'}
             data={trendResult.data}
-            xKey="order_items.created_month"
-            yKey="order_items.total_sale_price"
+            xKey={trendDimension}
+            yKey={trendMeasure === '__combo__' ? 'order_items.total_sale_price' : trendMeasure}
+            yKeys={
+              trendMeasure === '__combo__'
+                ? [
+                    {
+                      key: 'order_items.total_sale_price',
+                      name: 'Revenue ($)',
+                      type: 'area',
+                      color: '#38bdf8',
+                      format: 'currency',
+                      yAxisId: 'left',
+                    },
+                    {
+                      key: 'order_items.order_count',
+                      name: 'Orders (#)',
+                      type: 'line',
+                      color: '#34d399',
+                      format: 'number',
+                      yAxisId: 'right',
+                    },
+                  ]
+                : undefined
+            }
+            dimensionOptions={[
+              { label: 'Month', field: 'order_items.created_month' },
+              { label: 'Week', field: 'order_items.created_week' },
+              { label: 'Year', field: 'order_items.created_year' },
+            ]}
+            activeDimension={trendDimension}
+            onDimensionChange={setTrendDimension}
+            measureOptions={[
+              { label: 'Revenue', field: 'order_items.total_sale_price', format: 'currency' },
+              { label: 'Gross Margin', field: 'order_items.total_gross_margin', format: 'currency' },
+              { label: 'Orders', field: 'order_items.order_count', format: 'number' },
+              { label: 'Combo (Rev + Orders)', field: '__combo__', format: 'currency' },
+            ]}
+            activeMeasure={trendMeasure}
+            onMeasureChange={setTrendMeasure}
             loading={trendResult.loading}
             error={trendResult.error}
             height={320}
@@ -445,15 +492,37 @@ export const SalesOverviewApp: React.FC<GovernedAppProps> = ({ onRegisterQueries
           />
         </div>
 
-        {/* Product Category Share (1 Col) */}
+        {/* Product Category / Department Share (1 Col) */}
         <div className="lg:col-span-1">
           <DataChart
-            title="Sales by Category"
-            subtitle="Product category distribution"
+            title="Sales by Merchandise Mix"
+            subtitle="Click slice to filter or pivot by Category / Department"
             type="donut"
             data={categoryResult.data}
-            xKey="products.category"
+            xKey={categoryDimension}
             yKey="order_items.total_sale_price"
+            dimensionOptions={[
+              { label: 'Category', field: 'products.category' },
+              { label: 'Department', field: 'products.department' },
+            ]}
+            activeDimension={categoryDimension}
+            onDimensionChange={setCategoryDimension}
+            measureOptions={[
+              { label: 'Revenue', field: 'order_items.total_sale_price', format: 'currency' },
+              { label: 'Margin', field: 'order_items.total_gross_margin', format: 'currency' },
+              { label: 'Orders', field: 'order_items.order_count', format: 'number' },
+            ]}
+            activeFilterValue={
+              categoryDimension === 'products.category' ? filters.category || null : null
+            }
+            onPointClick={(entry) => {
+              if (categoryDimension === 'products.category') {
+                const catVal = String(entry['products.category'] || '');
+                if (catVal) {
+                  handleFilterChange('category', filters.category === catVal ? '' : catVal);
+                }
+              }
+            }}
             loading={categoryResult.loading}
             error={categoryResult.error}
             height={320}
@@ -467,19 +536,27 @@ export const SalesOverviewApp: React.FC<GovernedAppProps> = ({ onRegisterQueries
         {/* Top Brands Bar Chart */}
         <div className="lg:col-span-1">
           <DataChart
-            title="Top 10 Brands by Revenue"
-            subtitle="Click any brand to filter"
+            title="Top 10 Brands"
+            subtitle="Click any brand to cross-filter"
             type="bar"
             data={brandsResult.data}
             xKey="products.brand"
             yKey="order_items.total_sale_price"
+            measureOptions={[
+              { label: 'Revenue', field: 'order_items.total_sale_price', format: 'currency' },
+              { label: 'Margin', field: 'order_items.total_gross_margin', format: 'currency' },
+              { label: 'Orders', field: 'order_items.order_count', format: 'number' },
+            ]}
+            activeFilterValue={filters.brand || null}
             loading={brandsResult.loading}
             error={brandsResult.error}
             height={320}
             format="currency"
-            onBarClick={(entry) => {
+            onPointClick={(entry) => {
               const brandVal = String(entry['products.brand'] || '');
-              if (brandVal) handleFilterChange('brand', brandVal);
+              if (brandVal) {
+                handleFilterChange('brand', filters.brand === brandVal ? '' : brandVal);
+              }
             }}
           />
         </div>
@@ -488,18 +565,26 @@ export const SalesOverviewApp: React.FC<GovernedAppProps> = ({ onRegisterQueries
         <div className="lg:col-span-1">
           <DataChart
             title="Sales by Country"
-            subtitle="Top global markets by revenue"
+            subtitle="Click any market bar to filter"
             type="bar"
             data={countryResult.data}
             xKey="users.country"
             yKey="order_items.total_sale_price"
+            measureOptions={[
+              { label: 'Revenue', field: 'order_items.total_sale_price', format: 'currency' },
+              { label: 'Margin', field: 'order_items.total_gross_margin', format: 'currency' },
+              { label: 'Orders', field: 'order_items.order_count', format: 'number' },
+            ]}
+            activeFilterValue={filters.country || null}
             loading={countryResult.loading}
             error={countryResult.error}
             height={320}
             format="currency"
-            onBarClick={(entry) => {
+            onPointClick={(entry) => {
               const countryVal = String(entry['users.country'] || '');
-              if (countryVal) handleFilterChange('country', countryVal);
+              if (countryVal) {
+                handleFilterChange('country', filters.country === countryVal ? '' : countryVal);
+              }
             }}
           />
         </div>
@@ -508,11 +593,22 @@ export const SalesOverviewApp: React.FC<GovernedAppProps> = ({ onRegisterQueries
         <div className="lg:col-span-1">
           <DataChart
             title="Order Status Breakdown"
-            subtitle="Units by fulfillment status"
+            subtitle="Click any slice to cross-filter by status"
             type="donut"
             data={statusResult.data}
             xKey="order_items.status"
             yKey="order_items.count"
+            measureOptions={[
+              { label: 'Units', field: 'order_items.count', format: 'number' },
+              { label: 'Revenue', field: 'order_items.total_sale_price', format: 'currency' },
+            ]}
+            activeFilterValue={filters.status || null}
+            onPointClick={(entry) => {
+              const statusVal = String(entry['order_items.status'] || '');
+              if (statusVal) {
+                handleFilterChange('status', filters.status === statusVal ? '' : statusVal);
+              }
+            }}
             loading={statusResult.loading}
             error={statusResult.error}
             height={320}

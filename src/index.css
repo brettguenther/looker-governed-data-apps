@@ -26,3 +26,24 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+/* Recharts tooltip dark theme text contrast overrides */
+.recharts-default-tooltip {
+  background-color: #0f172a !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0.75rem !important;
+  color: #f8fafc !important;
+}
+
+.recharts-tooltip-item,
+.recharts-tooltip-item-name,
+.recharts-tooltip-item-value,
+.recharts-tooltip-item-separator {
+  color: #f8fafc !important;
+}
+
+.recharts-tooltip-label {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  margin-bottom: 4px !important;
+}

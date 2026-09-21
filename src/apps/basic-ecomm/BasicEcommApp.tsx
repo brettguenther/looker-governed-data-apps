@@ -85,11 +85,21 @@ export const BasicEcommApp: React.FC<GovernedAppProps> = ({ onRegisterQueries })
     return filterObj;
   }, [filters]);
 
+  const [trendDimension, setTrendDimension] = useState<string>('basic_order_items.created_at_month');
+  const [trendMeasure, setTrendMeasure] = useState<string>('basic_order_items.total_sale_price');
+  const [categoryDimension, setCategoryDimension] = useState<string>('basic_products.category');
+
   // Construct queries
   const kpiPayload = useMemo(() => buildKpiMetricsQuery(activeLookerFilters), [activeLookerFilters]);
-  const trendPayload = useMemo(() => buildMonthlyTrendQuery(activeLookerFilters), [activeLookerFilters]);
+  const trendPayload = useMemo(
+    () => buildMonthlyTrendQuery(activeLookerFilters, trendDimension),
+    [activeLookerFilters, trendDimension]
+  );
   const brandsPayload = useMemo(() => buildTopBrandsQuery(activeLookerFilters), [activeLookerFilters]);
-  const categoryPayload = useMemo(() => buildCategoryRevenueQuery(activeLookerFilters), [activeLookerFilters]);
+  const categoryPayload = useMemo(
+    () => buildCategoryRevenueQuery(activeLookerFilters, categoryDimension),
+    [activeLookerFilters, categoryDimension]
+  );
   const countryPayload = useMemo(() => buildCountrySalesQuery(activeLookerFilters), [activeLookerFilters]);
   const statusPayload = useMemo(() => buildOrderStatusQuery(activeLookerFilters), [activeLookerFilters]);
   const tablePayload = useMemo(() => buildProductPerformanceTableQuery(activeLookerFilters), [activeLookerFilters]);
@@ -410,15 +420,52 @@ export const BasicEcommApp: React.FC<GovernedAppProps> = ({ onRegisterQueries })
 
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Monthly Revenue Trend (2 Cols) */}
+        {/* Dynamic Revenue & Volume Trend (2 Cols) */}
         <div className="lg:col-span-2">
           <DataChart
-            title="Monthly Revenue Trend"
-            subtitle="Looker monthly time dimension aggregation"
-            type="area"
+            title="Performance Time-Series Trend"
+            subtitle="Dynamically switch time granularity, metric, or dual-axis combo view"
+            type={trendMeasure === '__combo__' ? 'combo' : 'area'}
             data={trendResult.data}
-            xKey="basic_order_items.created_at_month"
-            yKey="basic_order_items.total_sale_price"
+            xKey={trendDimension}
+            yKey={trendMeasure === '__combo__' ? 'basic_order_items.total_sale_price' : trendMeasure}
+            yKeys={
+              trendMeasure === '__combo__'
+                ? [
+                    {
+                      key: 'basic_order_items.total_sale_price',
+                      name: 'Revenue ($)',
+                      type: 'area',
+                      color: '#38bdf8',
+                      format: 'currency',
+                      yAxisId: 'left',
+                    },
+                    {
+                      key: 'basic_order_items.count',
+                      name: 'Units Sold (#)',
+                      type: 'line',
+                      color: '#34d399',
+                      format: 'number',
+                      yAxisId: 'right',
+                    },
+                  ]
+                : undefined
+            }
+            dimensionOptions={[
+              { label: 'Month', field: 'basic_order_items.created_at_month' },
+              { label: 'Week', field: 'basic_order_items.created_at_week' },
+              { label: 'Year', field: 'basic_order_items.created_at_year' },
+            ]}
+            activeDimension={trendDimension}
+            onDimensionChange={setTrendDimension}
+            measureOptions={[
+              { label: 'Revenue', field: 'basic_order_items.total_sale_price', format: 'currency' },
+              { label: 'Units Sold', field: 'basic_order_items.count', format: 'number' },
+              { label: 'Avg Price', field: 'basic_order_items.average_sale_price', format: 'currency' },
+              { label: 'Combo (Rev + Units)', field: '__combo__', format: 'currency' },
+            ]}
+            activeMeasure={trendMeasure}
+            onMeasureChange={setTrendMeasure}
             loading={trendResult.loading}
             error={trendResult.error}
             height={320}
@@ -426,15 +473,36 @@ export const BasicEcommApp: React.FC<GovernedAppProps> = ({ onRegisterQueries })
           />
         </div>
 
-        {/* Product Category Share (1 Col) */}
+        {/* Product Category / Department Share (1 Col) */}
         <div className="lg:col-span-1">
           <DataChart
-            title="Revenue by Category"
-            subtitle="Product category distribution"
+            title="Merchandise Mix"
+            subtitle="Click slice to filter or pivot by Category / Department"
             type="donut"
             data={categoryResult.data}
-            xKey="basic_products.category"
+            xKey={categoryDimension}
             yKey="basic_order_items.total_sale_price"
+            dimensionOptions={[
+              { label: 'Category', field: 'basic_products.category' },
+              { label: 'Department', field: 'basic_products.department' },
+            ]}
+            activeDimension={categoryDimension}
+            onDimensionChange={setCategoryDimension}
+            measureOptions={[
+              { label: 'Revenue', field: 'basic_order_items.total_sale_price', format: 'currency' },
+              { label: 'Units', field: 'basic_order_items.count', format: 'number' },
+            ]}
+            activeFilterValue={
+              categoryDimension === 'basic_products.category' ? filters.category || null : null
+            }
+            onPointClick={(entry) => {
+              if (categoryDimension === 'basic_products.category') {
+                const cat = entry?.['basic_products.category'];
+                if (typeof cat === 'string') {
+                  handleFilterChange('category', filters.category === cat ? '' : cat);
+                }
+              }
+            }}
             loading={categoryResult.loading}
             error={categoryResult.error}
             height={320}
@@ -447,21 +515,27 @@ export const BasicEcommApp: React.FC<GovernedAppProps> = ({ onRegisterQueries })
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Brands Bar Chart */}
         <DataChart
-          title="Top 10 Brands by Revenue"
+          title="Top 10 Brands"
           subtitle="Click any brand bar to cross-filter the dashboard"
           type="bar"
           data={brandsResult.data}
           xKey="basic_products.brand"
           yKey="basic_order_items.total_sale_price"
+          measureOptions={[
+            { label: 'Revenue', field: 'basic_order_items.total_sale_price', format: 'currency' },
+            { label: 'Units Sold', field: 'basic_order_items.count', format: 'number' },
+            { label: 'Avg Price', field: 'basic_order_items.average_sale_price', format: 'currency' },
+          ]}
+          activeFilterValue={filters.brand || null}
           loading={brandsResult.loading}
           error={brandsResult.error}
           height={280}
           format="currency"
           colors={['#34a853', '#4285f4', '#fbbc04', '#ea4335', '#a142f4', '#24c1e0', '#fa7b17', '#f439a0']}
-          onBarClick={(entry) => {
+          onPointClick={(entry) => {
             const brand = entry?.['basic_products.brand'];
             if (typeof brand === 'string') {
-              handleFilterChange('brand', brand);
+              handleFilterChange('brand', filters.brand === brand ? '' : brand);
             }
           }}
         />
@@ -474,15 +548,20 @@ export const BasicEcommApp: React.FC<GovernedAppProps> = ({ onRegisterQueries })
           data={countryResult.data}
           xKey="basic_users.country"
           yKey="basic_order_items.total_sale_price"
+          measureOptions={[
+            { label: 'Revenue', field: 'basic_order_items.total_sale_price', format: 'currency' },
+            { label: 'Units Sold', field: 'basic_order_items.count', format: 'number' },
+          ]}
+          activeFilterValue={filters.country || null}
           loading={countryResult.loading}
           error={countryResult.error}
           height={280}
           format="currency"
           colors={['#4285f4', '#34a853', '#fbbc04', '#ea4335', '#12b5cb', '#6e2594']}
-          onBarClick={(entry) => {
+          onPointClick={(entry) => {
             const country = entry?.['basic_users.country'];
             if (typeof country === 'string') {
-              handleFilterChange('country', country);
+              handleFilterChange('country', filters.country === country ? '' : country);
             }
           }}
         />
@@ -493,11 +572,22 @@ export const BasicEcommApp: React.FC<GovernedAppProps> = ({ onRegisterQueries })
         <div className="lg:col-span-1">
           <DataChart
             title="Order Status Distribution"
-            subtitle="Order counts by fulfillment state"
+            subtitle="Click any slice to cross-filter by fulfillment status"
             type="donut"
             data={statusResult.data}
             xKey="basic_order_items.status"
             yKey="basic_order_items.count"
+            measureOptions={[
+              { label: 'Units', field: 'basic_order_items.count', format: 'number' },
+              { label: 'Revenue', field: 'basic_order_items.total_sale_price', format: 'currency' },
+            ]}
+            activeFilterValue={filters.status || null}
+            onPointClick={(entry) => {
+              const status = entry?.['basic_order_items.status'];
+              if (typeof status === 'string') {
+                handleFilterChange('status', filters.status === status ? '' : status);
+              }
+            }}
             loading={statusResult.loading}
             error={statusResult.error}
             height={260}

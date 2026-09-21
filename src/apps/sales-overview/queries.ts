@@ -17,31 +17,39 @@ export const buildKpiMetricsQuery = (filters: Record<string, string>): LookerQue
   vis_config: { type: 'single_value' },
 });
 
-export const buildMonthlyTrendQuery = (filters: Record<string, string>): LookerQueryPayload => ({
+export const buildMonthlyTrendQuery = (
+  filters: Record<string, string>,
+  timeDimension: string = 'order_items.created_month'
+): LookerQueryPayload => ({
   model: 'look_ecomm',
   view: 'order_items',
   fields: [
-    'order_items.created_month',
+    timeDimension,
     'order_items.total_sale_price',
     'order_items.order_count',
+    'order_items.total_gross_margin',
   ],
   filters,
-  sorts: ['order_items.created_month asc'],
-  limit: 24,
+  sorts: [`${timeDimension} asc`],
+  limit: 52,
   vis_config: { type: 'looker_area' },
 });
 
-export const buildCategoryRevenueQuery = (filters: Record<string, string>): LookerQueryPayload => ({
+export const buildCategoryRevenueQuery = (
+  filters: Record<string, string>,
+  dimension: string = 'products.category'
+): LookerQueryPayload => ({
   model: 'look_ecomm',
   view: 'order_items',
   fields: [
-    'products.category',
+    dimension,
     'order_items.total_sale_price',
     'order_items.order_count',
+    'order_items.total_gross_margin',
   ],
   filters: {
     ...filters,
-    'products.category': '-NULL',
+    [dimension]: '-NULL',
   },
   sorts: ['order_items.total_sale_price desc'],
   limit: 10,
@@ -55,6 +63,7 @@ export const buildTopBrandsQuery = (filters: Record<string, string>): LookerQuer
     'products.brand',
     'order_items.total_sale_price',
     'order_items.order_count',
+    'order_items.total_gross_margin',
   ],
   filters: {
     ...filters,
@@ -72,6 +81,7 @@ export const buildCountrySalesQuery = (filters: Record<string, string>): LookerQ
     'users.country',
     'order_items.total_sale_price',
     'order_items.order_count',
+    'order_items.total_gross_margin',
   ],
   filters: {
     ...filters,
