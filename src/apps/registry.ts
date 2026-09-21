@@ -8,6 +8,10 @@ const SalesOverviewApp = React.lazy(() =>
   import('./sales-overview/SalesOverviewApp').then((m) => ({ default: m.SalesOverviewApp }))
 );
 
+const NycCitibikeTripsApp = React.lazy(() =>
+  import('./nyc-citibike-trips/NycCitibikeTripsApp').then((m) => ({ default: m.NycCitibikeTripsApp }))
+);
+
 export interface GovernedAppDefinition {
   id: string;
   name: string;
@@ -20,6 +24,16 @@ export interface GovernedAppDefinition {
 }
 
 export const APP_REGISTRY: Record<string, GovernedAppDefinition> = {
+  'nyc-citibike-trips': {
+    id: 'nyc-citibike-trips',
+    name: 'NYC Citi Bike Analytics',
+    description: 'Ridership trends, commuting patterns, station performance, and demographic analytics',
+    model: 'nyc_citibike_trips',
+    view: 'trips',
+    category: 'Transportation',
+    icon: 'Bike',
+    component: NycCitibikeTripsApp,
+  },
   'basic-ecomm': {
     id: 'basic-ecomm',
     name: 'E-Commerce Overview',
@@ -51,5 +65,5 @@ export const getRegisteredApp = (id: string): GovernedAppDefinition | undefined 
 };
 
 export const getDefaultApp = (): GovernedAppDefinition => {
-  return APP_REGISTRY['basic-ecomm'] || Object.values(APP_REGISTRY)[0];
+  return APP_REGISTRY['nyc-citibike-trips'] || Object.values(APP_REGISTRY)[0];
 };

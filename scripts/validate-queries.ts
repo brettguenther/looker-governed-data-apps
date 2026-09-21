@@ -72,6 +72,10 @@ const loadLocalEnvSecrets = () => {
 
 loadLocalEnvSecrets();
 
+if (process.env.LOOKER_VERIFY_SSL === 'false' || process.env.LOOKER_VERIFY_SSL === '0' || !process.env.NODE_TLS_REJECT_UNAUTHORIZED) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 const getBaseUrl = (): string => {
   let url = process.env.LOOKER_BASE_URL || process.env.LOOKERSDK_BASE_URL || process.env.VITE_LOOKER_BASE_URL || 'https://your-company.looker.com';
   // Strip trailing slash

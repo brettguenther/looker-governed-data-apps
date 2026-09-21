@@ -12,7 +12,37 @@ import {
   ChevronDown,
   Check,
   Layers,
+  Bike,
+  ShoppingCart,
+  TrendingUp,
+  BarChart3,
+  PieChart,
+  Activity,
+  Globe,
+  Zap,
+  Compass,
+  Briefcase,
+  type LucideIcon,
 } from 'lucide-react';
+
+const APP_ICONS: Record<string, LucideIcon> = {
+  Bike,
+  ShoppingCart,
+  TrendingUp,
+  BarChart3,
+  PieChart,
+  Activity,
+  Globe,
+  Zap,
+  Compass,
+  Briefcase,
+  Layers,
+};
+
+const getAppIcon = (iconName?: string): LucideIcon => {
+  if (!iconName) return Layers;
+  return APP_ICONS[iconName] || Layers;
+};
 
 interface HeaderProps {
   onOpenInspector: () => void;
@@ -77,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition-all group"
             >
-              <Layers className="w-4 h-4 text-blue-400" />
+              {React.createElement(getAppIcon(activeApp?.icon), { className: 'w-4 h-4 text-blue-400 shrink-0' })}
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-white group-hover:text-blue-200 transition-colors truncate max-w-[130px] md:max-w-[180px]">
                   {activeApp?.name || 'Select App'}
@@ -124,6 +154,9 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-1.5">
+                            {React.createElement(getAppIcon(app.icon), {
+                              className: `w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-blue-400' : 'text-slate-400'}`
+                            })}
                             <span className="text-xs font-semibold truncate">{app.name}</span>
                             {app.category && (
                               <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">

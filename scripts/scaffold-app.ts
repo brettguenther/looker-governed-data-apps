@@ -111,12 +111,13 @@ export const buildDetailedTableQuery = (filters: Record<string, string>): Looker
   console.log(`✅ Created src/apps/${appId}/queries.ts`);
 
   // 2. Create <PascalName>App.tsx
-  const appComponentContent = `import React, { useState, useMemo, useEffect } from 'react';
+  const appComponentContent = `import React, { useState, useMemo } from 'react';
 import type { GovernedAppProps } from '../../types/looker';
 import { MetricCard } from '../../components/common/MetricCard';
 import { DataChart } from '../../components/common/DataChart';
 import { DataTable } from '../../components/common/DataTable';
 import { useLookerQuery } from '../../looker/hooks/useLookerQuery';
+import { useGovernedQuerySync } from '../../looker/hooks/useGovernedQuery';
 import {
   buildKpiMetricsQuery,
   buildMainTrendQuery,
@@ -146,51 +147,12 @@ export const ${pascalName}: React.FC<GovernedAppProps> = ({ onRegisterQueries })
   const trendQuery = useLookerQuery(useMemo(() => buildMainTrendQuery(activeFilters), [activeFilters]));
   const tableQuery = useLookerQuery(useMemo(() => buildDetailedTableQuery(activeFilters), [activeFilters]));
 
-  // Register queries with the Semantic Inspector
-  useEffect(() => {
-    if (onRegisterQueries) {
-      onRegisterQueries([
-        {
-          name: 'KPI Metrics',
-          payload: kpiQuery.queryPayload,
-          executionTimeMs: kpiQuery.executionTimeMs,
-          fromCache: kpiQuery.fromCache,
-          status: kpiQuery.loading ? 'loading' : kpiQuery.error ? 'error' : 'success',
-        },
-        {
-          name: 'Trend Over Time',
-          payload: trendQuery.queryPayload,
-          executionTimeMs: trendQuery.executionTimeMs,
-          fromCache: trendQuery.fromCache,
-          status: trendQuery.loading ? 'loading' : trendQuery.error ? 'error' : 'success',
-        },
-        {
-          name: 'Details Table',
-          payload: tableQuery.queryPayload,
-          executionTimeMs: tableQuery.executionTimeMs,
-          fromCache: tableQuery.fromCache,
-          status: tableQuery.loading ? 'loading' : tableQuery.error ? 'error' : 'success',
-        },
-      ]);
-    }
-  }, [
-    onRegisterQueries,
-    kpiQuery.queryPayload,
-    kpiQuery.executionTimeMs,
-    kpiQuery.fromCache,
-    kpiQuery.loading,
-    kpiQuery.error,
-    trendQuery.queryPayload,
-    trendQuery.executionTimeMs,
-    trendQuery.fromCache,
-    trendQuery.loading,
-    trendQuery.error,
-    tableQuery.queryPayload,
-    tableQuery.executionTimeMs,
-    tableQuery.fromCache,
-    tableQuery.loading,
-    tableQuery.error,
-  ]);
+  // Synchronize governed query telemetry with the Semantic Inspector
+  useGovernedQuerySync([
+    { name: 'KPI Metrics', query: kpiQuery },
+    { name: 'Trend Over Time', query: trendQuery },
+    { name: 'Details Table', query: tableQuery },
+  ], onRegisterQueries);
 
   const kpiData = (kpiQuery.data[0] || {}) as Record<string, unknown>;
 
