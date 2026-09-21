@@ -67,7 +67,18 @@ const MainAppContent: React.FC = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isAuthenticated ? (
           ActiveComponent ? (
-            <ActiveComponent onRegisterQueries={setRegisteredQueries} />
+            <React.Suspense
+              fallback={
+                <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3">
+                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                  <p className="text-xs font-mono text-slate-400">
+                    Loading {activeAppDef.name}...
+                  </p>
+                </div>
+              }
+            >
+              <ActiveComponent onRegisterQueries={setRegisteredQueries} />
+            </React.Suspense>
           ) : (
             <div className="p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-3">
               <AlertCircle className="w-8 h-8 text-amber-400 mx-auto" />

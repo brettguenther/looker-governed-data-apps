@@ -154,18 +154,21 @@ export const ${pascalName}: React.FC<GovernedAppProps> = ({ onRegisterQueries })
           name: 'KPI Metrics',
           payload: kpiQuery.queryPayload,
           executionTimeMs: kpiQuery.executionTimeMs,
+          fromCache: kpiQuery.fromCache,
           status: kpiQuery.loading ? 'loading' : kpiQuery.error ? 'error' : 'success',
         },
         {
           name: 'Trend Over Time',
           payload: trendQuery.queryPayload,
           executionTimeMs: trendQuery.executionTimeMs,
+          fromCache: trendQuery.fromCache,
           status: trendQuery.loading ? 'loading' : trendQuery.error ? 'error' : 'success',
         },
         {
           name: 'Details Table',
           payload: tableQuery.queryPayload,
           executionTimeMs: tableQuery.executionTimeMs,
+          fromCache: tableQuery.fromCache,
           status: tableQuery.loading ? 'loading' : tableQuery.error ? 'error' : 'success',
         },
       ]);
@@ -174,14 +177,17 @@ export const ${pascalName}: React.FC<GovernedAppProps> = ({ onRegisterQueries })
     onRegisterQueries,
     kpiQuery.queryPayload,
     kpiQuery.executionTimeMs,
+    kpiQuery.fromCache,
     kpiQuery.loading,
     kpiQuery.error,
     trendQuery.queryPayload,
     trendQuery.executionTimeMs,
+    trendQuery.fromCache,
     trendQuery.loading,
     trendQuery.error,
     tableQuery.queryPayload,
     tableQuery.executionTimeMs,
+    tableQuery.fromCache,
     tableQuery.loading,
     tableQuery.error,
   ]);
@@ -281,10 +287,13 @@ export const ${pascalName}: React.FC<GovernedAppProps> = ({ onRegisterQueries })
   const registryPath = path.join(rootDir, 'src', 'apps', 'registry.ts');
   let registryContent = fs.readFileSync(registryPath, 'utf-8');
 
-  // Add import
-  const importStatement = `import { ${pascalName} } from './${appId}/${pascalName}';\n`;
+  // Add React.lazy declaration
+  const lazyDeclaration = `const ${pascalName} = React.lazy(() =>\n  import('./${appId}/${pascalName}').then((m) => ({ default: m.${pascalName} }))\n);\n`;
   if (!registryContent.includes(pascalName)) {
-    registryContent = importStatement + registryContent;
+    registryContent = registryContent.replace(
+      /export interface GovernedAppDefinition/,
+      `${lazyDeclaration}\nexport interface GovernedAppDefinition`
+    );
   }
 
   // Add entry into APP_REGISTRY object

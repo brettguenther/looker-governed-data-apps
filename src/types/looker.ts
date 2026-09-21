@@ -50,6 +50,7 @@ export interface RegisteredQuery {
   payload: LookerQueryPayload;
   executionTimeMs?: number | null;
   status: 'success' | 'loading' | 'error';
+  fromCache?: boolean;
 }
 
 export interface GovernedAppProps {

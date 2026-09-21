@@ -1,7 +1,12 @@
 import React from 'react';
 import type { GovernedAppProps } from '../types/looker';
-import { BasicEcommApp } from './basic-ecomm/BasicEcommApp';
-import { SalesOverviewApp } from './sales-overview/SalesOverviewApp';
+
+const BasicEcommApp = React.lazy(() =>
+  import('./basic-ecomm/BasicEcommApp').then((m) => ({ default: m.BasicEcommApp }))
+);
+const SalesOverviewApp = React.lazy(() =>
+  import('./sales-overview/SalesOverviewApp').then((m) => ({ default: m.SalesOverviewApp }))
+);
 
 export interface GovernedAppDefinition {
   id: string;
@@ -11,7 +16,7 @@ export interface GovernedAppDefinition {
   view: string;
   category?: string;
   icon?: string;
-  component: React.ComponentType<GovernedAppProps>;
+  component: React.ComponentType<GovernedAppProps> | React.LazyExoticComponent<React.ComponentType<GovernedAppProps>>;
 }
 
 export const APP_REGISTRY: Record<string, GovernedAppDefinition> = {
