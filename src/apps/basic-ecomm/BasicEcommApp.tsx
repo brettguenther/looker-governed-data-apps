@@ -13,19 +13,8 @@ import {
   buildOrderStatusQuery,
   buildProductPerformanceTableQuery,
 } from './queries';
-import type { LookerQueryPayload } from '../../types/looker';
+import type { GovernedAppProps } from '../../types/looker';
 import { Filter, Calendar, Globe, Tag, CheckCircle, RotateCcw } from 'lucide-react';
-
-interface BasicEcommAppProps {
-  onRegisterQueries?: (
-    queries: Array<{
-      name: string;
-      payload: LookerQueryPayload;
-      executionTimeMs?: number | null;
-      status: 'success' | 'loading' | 'error';
-    }>
-  ) => void;
-}
 
 export interface EcommFilterState {
   dateRange: string;
@@ -35,7 +24,7 @@ export interface EcommFilterState {
   brand: string;
 }
 
-export const BasicEcommApp: React.FC<BasicEcommAppProps> = ({ onRegisterQueries }) => {
+export const BasicEcommApp: React.FC<GovernedAppProps> = ({ onRegisterQueries }) => {
   const [filters, setFilters] = useState<EcommFilterState>({
     dateRange: '2 years',
     country: '',
@@ -122,42 +111,49 @@ export const BasicEcommApp: React.FC<BasicEcommAppProps> = ({ onRegisterQueries 
           name: 'Executive KPIs',
           payload: kpiPayload,
           executionTimeMs: kpiResult.executionTimeMs,
+          fromCache: kpiResult.fromCache,
           status: kpiResult.loading ? 'loading' : kpiResult.error ? 'error' : 'success',
         },
         {
           name: 'Monthly Revenue & Volume Trend',
           payload: trendPayload,
           executionTimeMs: trendResult.executionTimeMs,
+          fromCache: trendResult.fromCache,
           status: trendResult.loading ? 'loading' : trendResult.error ? 'error' : 'success',
         },
         {
           name: 'Top Brands by Revenue',
           payload: brandsPayload,
           executionTimeMs: brandsResult.executionTimeMs,
+          fromCache: brandsResult.fromCache,
           status: brandsResult.loading ? 'loading' : brandsResult.error ? 'error' : 'success',
         },
         {
           name: 'Revenue by Category',
           payload: categoryPayload,
           executionTimeMs: categoryResult.executionTimeMs,
+          fromCache: categoryResult.fromCache,
           status: categoryResult.loading ? 'loading' : categoryResult.error ? 'error' : 'success',
         },
         {
           name: 'Geographic Markets',
           payload: countryPayload,
           executionTimeMs: countryResult.executionTimeMs,
+          fromCache: countryResult.fromCache,
           status: countryResult.loading ? 'loading' : countryResult.error ? 'error' : 'success',
         },
         {
           name: 'Order Status Distribution',
           payload: statusPayload,
           executionTimeMs: statusResult.executionTimeMs,
+          fromCache: statusResult.fromCache,
           status: statusResult.loading ? 'loading' : statusResult.error ? 'error' : 'success',
         },
         {
           name: 'Product & Brand Performance Table',
           payload: tablePayload,
           executionTimeMs: tableResult.executionTimeMs,
+          fromCache: tableResult.fromCache,
           status: tableResult.loading ? 'loading' : tableResult.error ? 'error' : 'success',
         },
       ]);
@@ -172,24 +168,31 @@ export const BasicEcommApp: React.FC<BasicEcommAppProps> = ({ onRegisterQueries 
     statusPayload,
     tablePayload,
     kpiResult.executionTimeMs,
+    kpiResult.fromCache,
     kpiResult.loading,
     kpiResult.error,
     trendResult.executionTimeMs,
+    trendResult.fromCache,
     trendResult.loading,
     trendResult.error,
     brandsResult.executionTimeMs,
+    brandsResult.fromCache,
     brandsResult.loading,
     brandsResult.error,
     categoryResult.executionTimeMs,
+    categoryResult.fromCache,
     categoryResult.loading,
     categoryResult.error,
     countryResult.executionTimeMs,
+    countryResult.fromCache,
     countryResult.loading,
     countryResult.error,
     statusResult.executionTimeMs,
+    statusResult.fromCache,
     statusResult.loading,
     statusResult.error,
     tableResult.executionTimeMs,
+    tableResult.fromCache,
     tableResult.loading,
     tableResult.error,
   ]);

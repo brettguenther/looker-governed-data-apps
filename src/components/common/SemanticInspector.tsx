@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
-import { X, Code2, ShieldCheck, Terminal, Copy, Check, ExternalLink } from 'lucide-react';
-import type { LookerQueryPayload } from '../../types/looker';
+import { X, Code2, ShieldCheck, Terminal, Copy, Check, ExternalLink, Zap, RotateCcw } from 'lucide-react';
+import type { RegisteredQuery } from '../../types/looker';
 import { getLookerConfig } from '../../looker/config';
+import { clearLookerQueryCache, getLookerQueryCacheStats } from '../../looker/hooks/useLookerQuery';
 
 interface SemanticInspectorProps {
   isOpen: boolean;
   onClose: () => void;
-  queries: Array<{
-    name: string;
-    payload: LookerQueryPayload;
-    executionTimeMs?: number | null;
-    status: 'success' | 'loading' | 'error';
-  }>;
+  queries: RegisteredQuery[];
 }
 
 export const SemanticInspector: React.FC<SemanticInspectorProps> = ({ isOpen, onClose, queries }) => {
   const [activeTab, setActiveTab] = useState<'queries' | 'governance' | 'code'>('queries');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [cacheCleared, setCacheCleared] = useState<boolean>(false);
   const config = getLookerConfig();
 
   if (!isOpen) return null;
@@ -26,6 +23,14 @@ export const SemanticInspector: React.FC<SemanticInspectorProps> = ({ isOpen, on
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 1500);
   };
+
+  const handleClearCache = () => {
+    clearLookerQueryCache();
+    setCacheCleared(true);
+    setTimeout(() => setCacheCleared(false), 1500);
+  };
+
+  const cacheStats = getLookerQueryCacheStats();
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
@@ -41,12 +46,22 @@ export const SemanticInspector: React.FC<SemanticInspectorProps> = ({ isOpen, on
               <p className="text-xs text-slate-400 font-mono">Live Looker CORS API & Governance Verification</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleClearCache}
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              title="Clear client-side SWR query cache"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
+              <span>{cacheCleared ? 'Cache Cleared' : `Clear Cache (${cacheStats.size})`}</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
@@ -104,11 +119,16 @@ export const SemanticInspector: React.FC<SemanticInspectorProps> = ({ isOpen, on
                         </span>
                       </div>
                       <div className="flex items-center space-x-3">
-                        {q.executionTimeMs && (
+                        {q.fromCache ? (
+                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                            <Zap className="w-3 h-3 text-amber-400" />
+                            <span>SWR Cache (0ms)</span>
+                          </span>
+                        ) : q.executionTimeMs !== null && q.executionTimeMs !== undefined ? (
                           <span className="text-[11px] font-mono text-emerald-400">
                             {q.executionTimeMs}ms
                           </span>
-                        )}
+                        ) : null}
                         <button
                           onClick={() => handleCopy(jsonString, idx)}
                           className="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors"
